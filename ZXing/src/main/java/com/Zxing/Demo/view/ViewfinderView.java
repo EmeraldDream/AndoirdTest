@@ -191,6 +191,7 @@ public final class ViewfinderView extends View {
             scanY += SCAN_VELOCITY;
         }
 
+        paint.setColor(laserColor);
         canvas.drawRect(frame.left + 2, scanY, frame.right - 2, scanY + 8, paint);
     }
 }
