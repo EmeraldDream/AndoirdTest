@@ -20,6 +20,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
@@ -54,6 +55,9 @@ public final class ViewfinderView extends View {
   private int scannerAlpha;
   private Collection<ResultPoint> possibleResultPoints;
   private Collection<ResultPoint> lastPossibleResultPoints;
+
+  private int scanY;
+  private final int SCAN_VELOCITY = 15;
 
   // This constructor is used when the class is built from an XML resource.
   public ViewfinderView(Context context, AttributeSet attrs) {
@@ -94,20 +98,17 @@ public final class ViewfinderView extends View {
     } else {
 
       // Draw a two pixel solid black border inside the framing rect
-      paint.setColor(frameColor);
-      canvas.drawRect(frame.left, frame.top, frame.right + 1, frame.top + 2, paint);
-      canvas.drawRect(frame.left, frame.top + 2, frame.left + 2, frame.bottom - 1, paint);
-      canvas.drawRect(frame.right - 1, frame.top, frame.right + 1, frame.bottom - 1, paint);
-      canvas.drawRect(frame.left, frame.bottom - 1, frame.right + 1, frame.bottom + 1, paint);
+      drawFrameBounds(canvas, frame);
 
       // Draw a red "laser scanner" line through the middle to show decoding is active
-      paint.setColor(laserColor);
+      /*paint.setColor(laserColor);
       paint.setAlpha(SCANNER_ALPHA[scannerAlpha]);
       scannerAlpha = (scannerAlpha + 1) % SCANNER_ALPHA.length;
       int middle = frame.height() / 2 + frame.top;
-      canvas.drawRect(frame.left + 2, middle - 1, frame.right - 1, middle + 2, paint);
+      canvas.drawRect(frame.left + 2, middle - 1, frame.right - 1, middle + 2, paint);*/
+      drawScanner(canvas, frame);
 
-      Collection<ResultPoint> currentPossible = possibleResultPoints;
+      /*Collection<ResultPoint> currentPossible = possibleResultPoints;
       Collection<ResultPoint> currentLast = lastPossibleResultPoints;
       if (currentPossible.isEmpty()) {
         lastPossibleResultPoints = null;
@@ -126,7 +127,7 @@ public final class ViewfinderView extends View {
         for (ResultPoint point : currentLast) {
           canvas.drawCircle(frame.left + point.getX(), frame.top + point.getY(), 3.0f, paint);
         }
-      }
+      }*/
 
       // Request another update at the animation interval, but only repaint the laser line,
       // not the entire viewfinder mask.
@@ -153,4 +154,43 @@ public final class ViewfinderView extends View {
     possibleResultPoints.add(point);
   }
 
+    private void drawFrameBounds(Canvas canvas, Rect frame) {
+        paint.setColor(frameColor);
+        canvas.drawRect(frame.left, frame.top, frame.right + 1, frame.top + 2, paint);
+        canvas.drawRect(frame.left, frame.top + 2, frame.left + 2, frame.bottom - 1, paint);
+        canvas.drawRect(frame.right - 1, frame.top, frame.right + 1, frame.bottom - 1, paint);
+        canvas.drawRect(frame.left, frame.bottom - 1, frame.right + 1, frame.bottom + 1, paint);
+
+        paint.setColor(Color.GREEN);
+        paint.setStyle(Paint.Style.FILL);
+        int corWidth = 15;
+        int corLength = 45;
+
+        canvas.drawRect(frame.left - corWidth, frame.top, frame.left, frame.top + corLength, paint);
+        canvas.drawRect(frame.left - corWidth, frame.top - corWidth, frame.left + corLength, frame.top, paint);
+
+        canvas.drawRect(frame.right, frame.top, frame.right + corWidth, frame.top + corLength, paint);
+        canvas.drawRect(frame.right - corLength, frame.top - corWidth, frame.right + corWidth, frame.top, paint);
+
+        canvas.drawRect(frame.left - corWidth, frame.bottom - corLength, frame.left, frame.bottom, paint);
+        canvas.drawRect(frame.left - corWidth, frame.bottom, frame.left + corLength, frame.bottom + corWidth, paint);
+
+        canvas.drawRect(frame.right, frame.bottom - corLength, frame.right + corWidth, frame.bottom, paint);
+        canvas.drawRect(frame.right - corLength, frame.bottom, frame.right + corWidth, frame.bottom + corWidth, paint);
+    }
+
+    private void drawScanner(Canvas canvas, Rect frame) {
+        if (scanY == 0) {
+            scanY = frame.top;
+        }
+
+        if (scanY >= frame.bottom) {
+            scanY = frame.top;
+        }
+        else {
+            scanY += SCAN_VELOCITY;
+        }
+
+        canvas.drawRect(frame.left + 2, scanY, frame.right - 2, scanY + 8, paint);
+    }
 }
